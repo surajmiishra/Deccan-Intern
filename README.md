@@ -111,5 +111,5 @@ This project is licensed under the **MIT License**.
 
 ## 8. Contact  
 
-For any issues or inquiries, feel free to reach out via **[your email/contact info]**.
+For any issues or inquiries, feel free to reach out via **[surajm304@gmail.com]**.
 
