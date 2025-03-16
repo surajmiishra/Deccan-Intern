@@ -8,7 +8,7 @@ This repository contains a Flask-based REST API for predicting house prices base
 
 ### **1.1 Clone the Repository**  
 ```bash
-git clone https://github.com/surajmiishra/house-price-api.git
+git clone https://github.com/surajmiishra/Deccan-Intern.git
 cd house-price-api
 ```
 
