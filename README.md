@@ -39,7 +39,7 @@ pip install -r requirements.txt
 ```bash
 python app.py
 ```
-The API will start on **http://127.0.0.1:10000/**.  
+The API will start on **https://deccan-intern.onrender.com**.  
 
 ---
 
