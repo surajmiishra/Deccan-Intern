@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import joblib
 import numpy as np
+import os
 import logging
 import traceback
 
@@ -10,18 +11,23 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %
 # Initialize Flask app
 app = Flask(__name__)
 
-# Load the trained model
-try:
-    model = joblib.load("house_price_model.pkl")
-    logging.info("✅ Model loaded successfully.")
-except Exception as e:
-    logging.error(f"❌ Error loading model: {str(e)}")
-    model = None  # Prevents using an uninitialized model
-
 # Define expected feature order
 FEATURE_ORDER = ["Area", "Bedrooms", "Bathrooms", "Floors", "YearBuilt",
                  "Location_Rural", "Location_Suburban", "Location_Urban",
                  "Condition_Fair", "Condition_Good", "Condition_Poor", "Garage_Yes"]
+
+# Load the trained model if the file exists
+MODEL_PATH = "house_price_model.pkl"
+if os.path.exists(MODEL_PATH):
+    try:
+        model = joblib.load(MODEL_PATH)
+        logging.info("✅ Model loaded successfully.")
+    except Exception as e:
+        logging.error(f"❌ Error loading model: {str(e)}")
+        model = None
+else:
+    logging.error("❌ Model file not found.")
+    model = None  # Prevents using an uninitialized model
 
 @app.route("/", methods=["GET"])
 def home():
@@ -39,32 +45,38 @@ def health():
 def predict():
     try:
         logging.info("📩 Received request at /predict")
-        
-        # Parse incoming request
+
+        # Parse incoming JSON request
         data = request.get_json()
         if not data:
             logging.error("❌ No JSON data received.")
             return jsonify({"error": "Invalid input: No data provided"}), 400
-
-        # Extract features in expected order
-        features = np.array([data.get(key, 0) for key in FEATURE_ORDER]).reshape(1, -1)
-
-        logging.info(f"🔍 Features received: {features}")
 
         # Ensure model is loaded
         if model is None:
             logging.error("❌ Model is not loaded.")
             return jsonify({"error": "Model is unavailable"}), 500
 
+        # Extract features in expected order and handle missing values
+        features = []
+        for key in FEATURE_ORDER:
+            if key in data:
+                features.append(data[key])
+            else:
+                logging.warning(f"⚠️ Missing feature '{key}', setting to default (0).")
+                features.append(0)  # Set missing values to 0
+
+        features_array = np.array(features).reshape(1, -1)
+        logging.info(f"🔍 Features received: {features_array}")
+
         # Make prediction
-        prediction = model.predict(features)
+        prediction = model.predict(features_array)
         
         logging.info(f"✅ Prediction made: {prediction[0]}")
         return jsonify({"predicted_price": float(prediction[0])})
-    
+
     except Exception as e:
-        logging.error(f"⚠️ Error in prediction: {str(e)}")
-        traceback.print_exc()
+        logging.error(f"⚠️ Error in prediction: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
