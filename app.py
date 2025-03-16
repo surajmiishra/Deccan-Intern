@@ -8,7 +8,6 @@ model = joblib.load("house_price_model.pkl")
 # Initialize Flask app
 app = Flask(__name__)
 
-# Root route to confirm API is running
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"message": "House Price Prediction API is running!"})
@@ -16,24 +15,25 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        # Get JSON request data
         data = request.get_json()
-
+        if not data:
+            return jsonify({"error": "Invalid input: No data provided"}), 400
+        
         # Extract features in correct order
-        features = np.array([data["Area"], data["Bedrooms"], data["Bathrooms"],
-                             data["Floors"], data["YearBuilt"], data["Location_Rural"],
-                             data["Location_Suburban"], data["Location_Urban"],
-                             data["Condition_Fair"], data["Condition_Good"],
-                             data["Condition_Poor"], data["Garage_Yes"]]).reshape(1, -1)
+        feature_order = ["Area", "Bedrooms", "Bathrooms", "Floors", "YearBuilt",
+                         "Location_Rural", "Location_Suburban", "Location_Urban",
+                         "Condition_Fair", "Condition_Good", "Condition_Poor", "Garage_Yes"]
+        
+        features = np.array([data.get(key, 0) for key in feature_order]).reshape(1, -1)
 
         # Make prediction
         prediction = model.predict(features)
-
-        # Return response
+        
         return jsonify({"predicted_price": float(prediction[0])})
+    
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 # Run the API
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=10000, debug=True)
